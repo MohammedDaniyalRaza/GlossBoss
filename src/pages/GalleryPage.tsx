@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ArrowUpRight, Facebook, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { gallery, facebook } from '@/data/site';
 
-const categories = ['All', 'Exterior', 'Interior', 'Paint Polishing', 'Wheels'];
+const categories = ['All', 'Exterior', 'Interior', 'Paint Protection', 'Wheels'];
 
 export default function GalleryPage() {
   const [cat, setCat] = useState('All');

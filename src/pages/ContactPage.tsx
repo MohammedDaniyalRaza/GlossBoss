@@ -1,14 +1,37 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, CheckCircle, Facebook, Mail, MapPin, Phone } from 'lucide-react';
-import { email, facebook, phoneDisplay, phoneHref, services } from '@/data/site';
+import { email, facebook, phoneDisplay, phoneHref } from '@/data/site';
+import { addOns, bookingOptions, packages, vehicleSizes, type VehicleSize } from '@/data/services';
+import { useVehicleSize } from '@/context/vehicleSizeStore';
+import { AnimatedPrice } from '@/components/packages/Pricing';
 
 export default function ContactPage() {
+  const [searchParams] = useSearchParams();
+  const requestedService = searchParams.get('service');
+  const initialService = bookingOptions.find((option) => option.id === requestedService)?.id ?? '';
+  const { size, setSize } = useVehicleSize();
+
   const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', emailVal: '', vehicle: '', service: '', date: '', city: '', message: '' });
+  const [form, setForm] = useState({ name: '', phone: '', emailVal: '', vehicle: '', service: initialService, date: '', city: '', message: '' });
+  const [addOnIds, setAddOnIds] = useState<string[]>([]);
   const [focused, setFocused] = useState<Record<string, boolean>>({});
 
   const handle = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm({ ...form, [k]: e.target.value });
   const submit = (e: React.FormEvent) => { e.preventDefault(); setSubmitted(true); };
+
+  const handleSize = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const next = vehicleSizes.find((option) => option.id === e.target.value);
+    if (next) setSize(next.id as VehicleSize);
+  };
+
+  const toggleAddOn = (id: string) => {
+    setAddOnIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  };
+
+  const selectedPackage = packages.find((pkg) => pkg.views.some((view) => view.bookingId === form.service));
+  const addOnTotal = addOns.filter((addOn) => addOnIds.includes(addOn.id)).reduce((sum, addOn) => sum + addOn.from, 0);
+  const estimate = selectedPackage ? selectedPackage.prices[size] + addOnTotal : null;
 
   const infoCards = [
     { icon: <Phone size={22} />, title: 'Call us', value: phoneDisplay, href: phoneHref, label: 'Tap to call' },
@@ -85,7 +108,7 @@ export default function ContactPage() {
                 <div className={`form-field ${(focused['service'] || form.service) ? 'has-value' : ''}`}>
                   <select required value={form.service} onChange={handle('service')} onFocus={() => setFocused({ ...focused, service: true })} onBlur={() => setFocused({ ...focused, service: false })} id="service">
                     <option value="" disabled> </option>
-                    {services.map((s) => <option key={s.title} value={s.title}>{s.title}</option>)}
+                    {bookingOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
                   </select>
                   <label htmlFor="service">Service Requested</label>
                 </div>
@@ -93,6 +116,34 @@ export default function ContactPage() {
                   <input type="date" value={form.date} onChange={handle('date')} onFocus={() => setFocused({ ...focused, date: true })} onBlur={() => setFocused({ ...focused, date: false })} id="date" />
                   <label htmlFor="date">Preferred Date</label>
                 </div>
+              </div>
+              <div className="form-field has-value">
+                <select value={size} onChange={handleSize} id="vehicleSize">
+                  {vehicleSizes.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+                </select>
+                <label htmlFor="vehicleSize">Vehicle Size</label>
+              </div>
+              <fieldset className="booking-addons">
+                <legend>Add-ons (optional)</legend>
+                {addOns.map((addOn) => {
+                  const checked = addOnIds.includes(addOn.id);
+                  return (
+                    <label key={addOn.id} className={`addon-check ${checked ? 'is-checked' : ''}`}>
+                      <span>
+                        {addOn.name}
+                        <small>{addOn.to ? `$${addOn.from} – $${addOn.to}` : `$${addOn.from}`}{addOn.unit ? ` ${addOn.unit}` : ''}</small>
+                      </span>
+                      <input type="checkbox" checked={checked} onChange={() => toggleAddOn(addOn.id)} />
+                    </label>
+                  );
+                })}
+              </fieldset>
+              <div className="booking-estimate" aria-live="polite">
+                <div>
+                  <span>Estimated starting price</span>
+                  <small>{selectedPackage ? 'Final price confirmed when we book your appointment.' : 'Choose a package to see your estimate.'}</small>
+                </div>
+                {estimate !== null && <AnimatedPrice value={estimate} />}
               </div>
               <div className={`form-field ${(focused['city'] || form.city) ? 'has-value' : ''}`}>
                 <input type="text" value={form.city} onChange={handle('city')} onFocus={() => setFocused({ ...focused, city: true })} onBlur={() => setFocused({ ...focused, city: false })} id="city" placeholder=" " />

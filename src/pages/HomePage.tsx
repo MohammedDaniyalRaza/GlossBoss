@@ -2,15 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowUpRight, Check, Droplets, Gem, Lightbulb, MapPin, Phone, ShieldCheck, Sparkles, Star, SunMedium, Wind, CircleDot, Wrench } from 'lucide-react';
-import { services, reviews, faqs, phoneDisplay, phoneHref, gallery } from '@/data/site';
-import { CTA, AreaStrip, PackageCards, Stars } from '@/components/sections/Shared';
+import { ArrowUpRight, Gem, MapPin, Phone, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
+import { reviews, faqs, phoneDisplay, phoneHref, gallery } from '@/data/site';
+import { addOns, bookingOptions, packages } from '@/data/services';
+import { CTA, AreaStrip, SectionHeading, Stars } from '@/components/sections/Shared';
+import { AddOnsGrid, PackageCard, VehicleSizeSelector } from '@/components/packages/Pricing';
 
 gsap.registerPlugin(ScrollTrigger);
-
-const iconMap: Record<string, React.ReactNode> = {
-  Droplets: <Droplets />, Sparkles: <Sparkles />, ShieldCheck: <ShieldCheck />, SunMedium: <SunMedium />, Gem: <Gem />, CircleDot: <CircleDot />, Lightbulb: <Lightbulb />, Wind: <Wind />,
-};
 
 function HeroSection() {
   const ref = useRef<HTMLElement>(null);
@@ -54,36 +52,35 @@ function HeroSection() {
 }
 
 function Marquee() {
-  const labels = services.map((s) => s.title);
+  const labels = [...bookingOptions.map((option) => option.label), ...addOns.map((addOn) => addOn.name)];
   const doubled = [...labels, ...labels];
   return (
     <div className="marquee-wrap"><div className="marquee-track">{doubled.map((label, i) => <span key={i}><Wrench size={14} className="gear" />{label}</span>)}</div></div>
   );
 }
 
-function ServicesPreview() {
+function PackagesSection() {
   return (
-    <section className="section services-preview">
+    <section className="section section--navy packages-section">
       <div className="container">
-        <div className="section-heading" data-reveal>
-          <span className="eyebrow">What we do</span>
-          <h2>Every service, <em>perfected.</em></h2>
+        <SectionHeading light eyebrow="Our packages" title={<>Three packages. <em>Real pricing.</em></>} copy="Choose your vehicle size and every price updates instantly." />
+        <VehicleSizeSelector />
+        <div className="price-grid">
+          {packages.map((pkg, index) => <PackageCard key={pkg.id} pkg={pkg} index={index} />)}
         </div>
-        <div className="bento-grid">
-          {services.slice(0, 6).map((service, i) => (
-            <div key={service.title} className={`bento-card bento-card--${i % 3 === 0 ? 'wide' : i % 5 === 0 ? 'tall' : 'standard'}`} data-reveal>
-              <img src={service.image} alt={service.title} />
-              <div className="bento-overlay">
-                <span className="bento-icon">{iconMap[service.icon]}</span>
-                <h3>{service.title}</h3>
-                <p>{service.short}</p>
-              </div>
-              <div className="bento-shine" />
-            </div>
-          ))}
-        </div>
+      </div>
+    </section>
+  );
+}
+
+function AddOnsStrip() {
+  return (
+    <section className="section section--silver">
+      <div className="container">
+        <SectionHeading eyebrow="Specialty add-ons" title={<>Add a <em>finishing touch.</em></>} copy="Pair any package with these specialty services." />
+        <AddOnsGrid />
         <div className="center-link">
-          <Link className="button button--outline" to="/services">View all services <ArrowUpRight size={17} /></Link>
+          <Link className="button button--outline" to="/services">See full details <ArrowUpRight size={17} /></Link>
         </div>
       </div>
     </section>
@@ -203,7 +200,7 @@ function GalleryTeaser() {
 }
 
 function ReviewsCarousel() {
-  const [index, setIndex] = useState(0);
+  const [index] = useState(0);
   const visible = reviews.slice(index, index + 3);
   while (visible.length < 3) visible.push(reviews[visible.length % reviews.length]);
   return (
@@ -248,11 +245,11 @@ export default function HomePage() {
   return <>
     <HeroSection />
     <Marquee />
-    <ServicesPreview />
+    <PackagesSection />
+    <AddOnsStrip />
     <HowItWorks />
     <BeforeAfter />
     <WhyUs />
-    <PackageCards />
     <GalleryTeaser />
     <AreaStrip />
     <ReviewsCarousel />
